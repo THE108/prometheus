@@ -118,6 +118,12 @@ var (
 		Scheme:       "http",
 	}
 
+	// DefaultEtcdSDConfig is the default etcd SD configuration
+	DefaultEtcdSDConfig = EtcdSDConfig{
+		MetricKey:     "/metrics",
+		RetryInterval: model.Duration(15 * time.Second),
+	}
+
 	// DefaultServersetSDConfig is the default Serverset SD configuration.
 	DefaultServersetSDConfig = ServersetSDConfig{
 		Timeout: model.Duration(10 * time.Second),
@@ -430,6 +436,8 @@ type ServiceDiscoveryConfig struct {
 	FileSDConfigs []*FileSDConfig `yaml:"file_sd_configs,omitempty"`
 	// List of Consul service discovery configurations.
 	ConsulSDConfigs []*ConsulSDConfig `yaml:"consul_sd_configs,omitempty"`
+	// List of Etcd service discovery configurations.
+	EtcdSDConfigs []*EtcdSDConfig `yaml:"etcd_sd_configs,omitempty"`
 	// List of Serverset service discovery configurations.
 	ServersetSDConfigs []*ServersetSDConfig `yaml:"serverset_sd_configs,omitempty"`
 	// NerveSDConfigs is a list of Nerve service discovery configurations.
@@ -842,6 +850,45 @@ func (c *ConsulSDConfig) UnmarshalYAML(unmarshal func(interface{}) error) error 
 		return fmt.Errorf("Consul SD configuration requires a server address")
 	}
 	return nil
+}
+
+type EtcdSDConfig struct {
+	Endpoints     []string       `yaml:"endpoints"`
+	Username      string         `yaml:"username,omitempty"`
+	Password      string         `yaml:"password,omitempty"`
+	KeyPrefix     string         `yaml:"key_prefix"`
+	MetricKey     string         `yaml:"metric_key,omitempty"`
+	RetryInterval model.Duration `yaml:"retry_interval,omitempty"`
+
+	// Catches all undefined fields and must be empty after parsing.
+	XXX map[string]interface{} `yaml:",inline"`
+}
+
+func (c *EtcdSDConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	*c = DefaultEtcdSDConfig
+	type plain EtcdSDConfig
+	err := unmarshal((*plain)(c))
+	if err != nil {
+		return err
+	}
+	if len(c.Endpoints) == 0 {
+		return fmt.Errorf("Etcd SD configuration requires a endpoints addresses")
+	}
+	for _, endpoint := range c.Endpoints {
+		if strings.TrimSpace(endpoint) == "" {
+			return fmt.Errorf("Etcd SD configuration requires each endpoint to be not empty")
+		}
+	}
+	if strings.TrimSpace(c.KeyPrefix) == "" {
+		return fmt.Errorf("Etcd SD configuration requires a key_prefix")
+	}
+	if strings.TrimSpace(c.MetricKey) == "" {
+		return fmt.Errorf("Etcd SD configuration requires a metric_key")
+	}
+	if c.RetryInterval == model.Duration(0) {
+		return fmt.Errorf("Etcd SD configuration requires retry_interval to be non zero")
+	}
+	return checkOverflow(c.XXX, "etcd_sd_config")
 }
 
 // ServersetSDConfig is the configuration for Twitter serversets in Zookeeper based discovery.

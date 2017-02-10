@@ -24,6 +24,7 @@ import (
 	"github.com/prometheus/prometheus/discovery/consul"
 	"github.com/prometheus/prometheus/discovery/dns"
 	"github.com/prometheus/prometheus/discovery/ec2"
+	"github.com/prometheus/prometheus/discovery/etcd"
 	"github.com/prometheus/prometheus/discovery/file"
 	"github.com/prometheus/prometheus/discovery/gce"
 	"github.com/prometheus/prometheus/discovery/kubernetes"
@@ -70,6 +71,14 @@ func ProvidersFromConfig(cfg config.ServiceDiscoveryConfig) map[string]TargetPro
 			continue
 		}
 		app("consul", i, k)
+	}
+	for i, c := range cfg.EtcdSDConfigs {
+		k, err := etcd.NewEtcdDiscovery(c)
+		if err != nil {
+			log.Errorf("Cannot create Etcd discovery: %s", err)
+			continue
+		}
+		app("etcd", i, k)
 	}
 	for i, c := range cfg.MarathonSDConfigs {
 		m, err := marathon.NewDiscovery(c)

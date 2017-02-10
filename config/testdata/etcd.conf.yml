@@ -1,0 +1,12 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 30s
+
+scrape_configs:
+- job_name: test-service
+
+  etcd_sd_configs:
+  - endpoints:
+    - 'http://192.168.99.100:4001/'
+    key_prefix: '/some_key_prefix'
+

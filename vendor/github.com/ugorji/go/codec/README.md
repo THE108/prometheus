@@ -1,7 +1,5 @@
-// Copyright (c) 2012-2015 Ugorji Nwoke. All rights reserved.
-// Use of this source code is governed by a MIT license found in the LICENSE file.
+# Codec
 
-/*
 High Performance, Feature-Rich Idiomatic Go codec/encoding library for
 binc, msgpack, cbor, json.
 
@@ -11,23 +9,26 @@ Supported Serialization formats are:
   - binc:    http://github.com/ugorji/binc
   - cbor:    http://cbor.io http://tools.ietf.org/html/rfc7049
   - json:    http://json.org http://tools.ietf.org/html/rfc7159
-  - simple:
+  - simple: 
 
 To install:
 
     go get github.com/ugorji/go/codec
 
-This package understands the 'unsafe' tag, to allow using unsafe semantics:
+This package understands the `unsafe` tag, to allow using unsafe semantics:
 
-  - When decoding into a struct, you need to read the field name as a string
+  - When decoding into a struct, you need to read the field name as a string 
     so you can find the struct field it is mapped to.
-    Using `unsafe` will bypass the allocation and copying overhead of []byte->string conversion.
+    Using `unsafe` will bypass the allocation and copying overhead of `[]byte->string` conversion.
 
-To install using unsafe, pass the 'unsafe' tag:
+To use it, you must pass the `unsafe` tag during install:
 
-    go get -tags=unsafe github.com/ugorji/go/codec
+```
+go install -tags=unsafe github.com/ugorji/go/codec 
+```
 
-For detailed usage information, read the primer at http://ugorji.net/blog/go-codec-primer .
+Online documentation: http://godoc.org/github.com/ugorji/go/codec  
+Detailed Usage/How-to Primer: http://ugorji.net/blog/go-codec-primer
 
 The idiomatic Go support is as seen in other encoding packages in
 the standard library (ie json, xml, gob, etc).
@@ -38,9 +39,9 @@ Rich Feature Set includes:
   - Very High Performance.
     Our extensive benchmarks show us outperforming Gob, Json, Bson, etc by 2-4X.
   - Multiple conversions:
-    Package coerces types where appropriate
+    Package coerces types where appropriate 
     e.g. decode an int in the stream into a float, etc.
-  - Corner Cases:
+  - Corner Cases: 
     Overflows, nil maps/slices, nil values in streams are handled correctly
   - Standard field renaming via tags
   - Support for omitting empty fields during an encoding
@@ -56,7 +57,7 @@ Rich Feature Set includes:
   - Fast (no-reflection) encoding/decoding of common maps and slices
   - Code-generation for faster performance.
   - Support binary (e.g. messagepack, cbor) and text (e.g. json) formats
-  - Support indefinite-length formats to enable true streaming
+  - Support indefinite-length formats to enable true streaming 
     (for formats which support it e.g. json, cbor)
   - Support canonical encoding, where a value is ALWAYS encoded as same sequence of bytes.
     This mostly applies to maps, where iteration order is non-deterministic.
@@ -67,13 +68,13 @@ Rich Feature Set includes:
   - Encode/Decode from/to chan types (for iterative streaming support)
   - Drop-in replacement for encoding/json. `json:` key in struct tag supported.
   - Provides a RPC Server and Client Codec for net/rpc communication protocol.
-  - Handle unique idiosynchracies of codecs e.g.
-    - For messagepack, configure how ambiguities in handling raw bytes are resolved
+  - Handle unique idiosynchracies of codecs e.g. 
+    - For messagepack, configure how ambiguities in handling raw bytes are resolved 
     - For messagepack, provide rpc server/client codec to support
       msgpack-rpc protocol defined at:
       https://github.com/msgpack-rpc/msgpack-rpc/blob/master/spec.md
 
-Extension Support
+## Extension Support
 
 Users can register a function to handle the encoding or decoding of
 their custom types.
@@ -91,28 +92,14 @@ encoded as an empty map because it has no exported fields, while UUID
 would be encoded as a string. However, with extension support, you can
 encode any of these however you like.
 
-RPC
+## RPC
 
 RPC Client and Server Codecs are implemented, so the codecs can be used
 with the standard net/rpc package.
 
-Usage
+## Usage
 
-The Handle is SAFE for concurrent READ, but NOT SAFE for concurrent modification.
-
-The Encoder and Decoder are NOT safe for concurrent use.
-
-Consequently, the usage model is basically:
-
-    - Create and initialize the Handle before any use.
-      Once created, DO NOT modify it.
-    - Multiple Encoders or Decoders can now use the Handle concurrently.
-      They only read information off the Handle (never write).
-    - However, each Encoder or Decoder MUST not be used concurrently
-    - To re-use an Encoder/Decoder, call Reset(...) on it first.
-      This allows you use state maintained on the Encoder/Decoder.
-
-Sample usage model:
+Typical usage model:
 
     // create and configure Handle
     var (
@@ -159,37 +146,3 @@ Sample usage model:
     //OR rpcCodec := codec.MsgpackSpecRpc.ClientCodec(conn, h)
     client := rpc.NewClientWithCodec(rpcCodec)
 
-*/
-package codec
-
-// Benefits of go-codec:
-//
-//    - encoding/json always reads whole file into memory first.
-//      This makes it unsuitable for parsing very large files.
-//    - encoding/xml cannot parse into a map[string]interface{}
-//      I found this out on reading https://github.com/clbanning/mxj
-
-// TODO:
-//
-//   - optimization for codecgen:
-//     if len of entity is <= 3 words, then support a value receiver for encode.
-//   - (En|De)coder should store an error when it occurs.
-//     Until reset, subsequent calls return that error that was stored.
-//     This means that free panics must go away.
-//     All errors must be raised through errorf method.
-//   - Decoding using a chan is good, but incurs concurrency costs.
-//     This is because there's no fast way to use a channel without it
-//     having to switch goroutines constantly.
-//     Callback pattern is still the best. Maybe cnsider supporting something like:
-//        type X struct {
-//             Name string
-//             Ys []Y
-//             Ys chan <- Y
-//             Ys func(interface{}) -> call this interface for each entry in there.
-//        }
-//    - Consider adding a isZeroer interface { isZero() bool }
-//      It is used within isEmpty, for omitEmpty support.
-//    - Consider making Handle used AS-IS within the encoding/decoding session.
-//      This means that we don't cache Handle information within the (En|De)coder,
-//      except we really need it at Reset(...)
-//    - Handle recursive types during encoding/decoding?

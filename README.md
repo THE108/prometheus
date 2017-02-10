@@ -1,3 +1,33 @@
+# About this fork
+
+This fork is intended to implement custom etcd service discovery.
+
+Targets must be provided as a key/value pairs in etcd. Key example:
+
+Key:
+
+    /some_key_prefix/some_datacenter/some_api
+    
+Value:
+
+    {"url": "http://some_api:5000/metrics", "tags": [{"key": "some_key", "value": "some_value"}]}
+
+See `./retrieval/discovery/etcd.go` file.
+
+Etcd service discovery configuration example:
+
+    global:
+      scrape_interval:     15s
+      evaluation_interval: 30s
+    
+    scrape_configs:
+    - job_name: test-service
+    
+      etcd_sd_configs:
+      - endpoints:
+        - 'http://192.168.99.100:4001/'
+        key_prefix: '/some_key_prefix'
+
 # Prometheus [![Build Status](https://travis-ci.org/prometheus/prometheus.svg)][travis]
 
 [![CircleCI](https://circleci.com/gh/prometheus/prometheus/tree/master.svg?style=shield)][circleci]
